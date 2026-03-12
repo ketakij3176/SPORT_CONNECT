@@ -1,0 +1,49 @@
+{
+  "name": "Booking",
+  "type": "object",
+  "properties": {
+    "ground_id": {
+      "type": "string"
+    },
+    "ground_name": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "time_slot": {
+      "type": "string"
+    },
+    "num_players": {
+      "type": "number"
+    },
+    "contact_number": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "cancelled"
+      ],
+      "default": "pending"
+    },
+    "total_price": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "ground_id",
+    "date",
+    "time_slot"
+  ]
+}

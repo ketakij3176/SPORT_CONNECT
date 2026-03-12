@@ -1,0 +1,39 @@
+{
+  "name": "TournamentRegistration",
+  "type": "object",
+  "properties": {
+    "tournament_id": {
+      "type": "string"
+    },
+    "tournament_name": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "team_name": {
+      "type": "string"
+    },
+    "num_players": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "tournament_id"
+  ]
+}

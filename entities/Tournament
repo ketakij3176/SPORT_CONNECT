@@ -1,0 +1,80 @@
+{
+  "name": "Tournament",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "sport_type": {
+      "type": "string",
+      "enum": [
+        "cricket",
+        "football",
+        "basketball",
+        "tennis",
+        "badminton",
+        "volleyball",
+        "hockey",
+        "swimming",
+        "athletics",
+        "other"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "entry_fee": {
+      "type": "number"
+    },
+    "prize_pool": {
+      "type": "string"
+    },
+    "max_teams": {
+      "type": "number"
+    },
+    "registered_count": {
+      "type": "number",
+      "default": 0
+    },
+    "organizer_email": {
+      "type": "string"
+    },
+    "organizer_name": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "upcoming",
+        "ongoing",
+        "completed",
+        "cancelled"
+      ],
+      "default": "upcoming"
+    }
+  },
+  "required": [
+    "name",
+    "sport_type"
+  ]
+}

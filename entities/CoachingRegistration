@@ -1,0 +1,47 @@
+{
+  "name": "CoachingRegistration",
+  "type": "object",
+  "properties": {
+    "coach_id": {
+      "type": "string"
+    },
+    "coach_name": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "age": {
+      "type": "number"
+    },
+    "skill_level": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ]
+    },
+    "preferred_schedule": {
+      "type": "string"
+    },
+    "contact_number": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "coach_id"
+  ]
+}

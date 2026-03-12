@@ -1,0 +1,65 @@
+{
+  "name": "Ground",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Ground name"
+    },
+    "sport_type": {
+      "type": "string",
+      "enum": [
+        "cricket",
+        "football",
+        "basketball",
+        "tennis",
+        "badminton",
+        "volleyball",
+        "hockey",
+        "swimming",
+        "athletics",
+        "other"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "price_per_hour": {
+      "type": "number"
+    },
+    "rating": {
+      "type": "number"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "facilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "available_slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "owner_email": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "sport_type"
+  ]
+}

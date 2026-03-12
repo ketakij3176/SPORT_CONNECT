@@ -1,0 +1,57 @@
+{
+  "name": "Equipment",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "brand": {
+      "type": "string"
+    },
+    "sport_type": {
+      "type": "string"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "new",
+        "like_new",
+        "good",
+        "fair"
+      ]
+    },
+    "buy_price": {
+      "type": "number"
+    },
+    "rent_price_per_day": {
+      "type": "number"
+    },
+    "description": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "seller_email": {
+      "type": "string"
+    },
+    "seller_name": {
+      "type": "string"
+    },
+    "seller_location": {
+      "type": "string"
+    },
+    "available_for": {
+      "type": "string",
+      "enum": [
+        "buy",
+        "rent",
+        "both"
+      ],
+      "default": "both"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

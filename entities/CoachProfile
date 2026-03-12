@@ -1,0 +1,46 @@
+{
+  "name": "CoachProfile",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "sport": {
+      "type": "string"
+    },
+    "experience_years": {
+      "type": "number"
+    },
+    "description": {
+      "type": "string"
+    },
+    "training_schedule": {
+      "type": "string"
+    },
+    "fee_per_session": {
+      "type": "number"
+    },
+    "location": {
+      "type": "string"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "rating": {
+      "type": "number"
+    },
+    "image_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "sport"
+  ]
+}
