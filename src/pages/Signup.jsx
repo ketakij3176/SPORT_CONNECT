@@ -1,27 +1,34 @@
-import React, { useState } from "react"
+import React,{useState} from "react"
 import { supabase } from "../supabaseClient"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate,Link } from "react-router-dom"
 
-export default function Login(){
+export default function Signup(){
 
 const [username,setUsername] = useState("")
 const [password,setPassword] = useState("")
+const [role,setRole] = useState("")
 const navigate = useNavigate()
 
-const handleLogin = async () => {
+const handleSignup = async () => {
 
-const { data,error } = await supabase
+const { error } = await supabase
 .from("users")
-.select("*")
-.eq("username",username)
-.eq("password",password)
+.insert([
+{
+username:username,
+password:password,
+role:role
+}
+])
 
-if(error || data.length === 0){
-alert("Invalid username or password")
+if(error){
+alert(error.message)
 return
 }
 
-navigate("/Landing")
+alert("Account Created")
+
+navigate("/")
 
 }
 
@@ -31,7 +38,7 @@ return(
 
 <div style={styles.card}>
 
-<h2 style={styles.title}>SPORT CONNECT</h2>
+<h2 style={styles.title}><b>Create Account</b></h2>
 
 <input
 style={styles.input}
@@ -46,13 +53,28 @@ placeholder="Password"
 onChange={(e)=>setPassword(e.target.value)}
 />
 
-<button style={styles.button} onClick={handleLogin}>
-Login
+<select
+style={styles.input}
+onChange={(e)=>setRole(e.target.value)}
+>
+
+<option>Select Role</option>
+<option>Player</option>
+<option>Club</option>
+<option>Coach</option>
+<option>Tournament Organizer</option>
+<option>Ground Owner</option>
+<option>Equipment Resources</option>
+
+</select>
+
+<button style={styles.button} onClick={handleSignup}>
+Sign Up
 </button>
 
 <p style={styles.text}>
-Don't have an account?
-<Link to="/signup" style={styles.link}> Sign up</Link>
+Already have an account?
+<Link to="/" style={styles.link}> Login</Link>
 </p>
 
 </div>
