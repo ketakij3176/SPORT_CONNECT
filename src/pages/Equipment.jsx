@@ -62,34 +62,65 @@ export default function Equipment() {
   });
   const comparisons = Object.entries(grouped).filter(([, items]) => items.length > 1);
 
+  const sportTabs = [
+    { id: 'all', label: 'All' },
+    { id: 'cricket', label: 'Cricket' },
+    { id: 'football', label: 'Football' },
+    { id: 'badminton', label: 'Badminton' },
+    { id: 'basketball', label: 'Basketball' },
+    { id: 'tennis', label: 'Tennis' },
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Equipment Hub</h1>
-          <p className="text-muted-foreground text-sm">Buy, rent, or sell sports equipment</p>
+          <h1 className="text-2xl font-bold">Equipment Shop</h1>
+          <p className="text-muted-foreground text-sm">Buy or rent sports gear</p>
         </div>
-        <Button onClick={() => setShowAdd(true)} className="rounded-full">
+        <Button onClick={() => setShowAdd(true)} className="rounded-full shrink-0">
           <Plus className="w-4 h-4 mr-2" /> List Equipment
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search equipment..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search equipment..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="pl-10 rounded-xl"
+        />
+      </div>
+
+      {/* Scrollable sport category tabs */}
+      <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 mb-4">
+        <div className="flex gap-2 min-w-max">
+          {sportTabs.map(st => (
+            <button
+              key={st.id}
+              onClick={() => setSportFilter(st.id)}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                sportFilter === st.id ? 'bg-primary text-primary-foreground shadow' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              {st.label}
+            </button>
+          ))}
         </div>
-        <Select value={sportFilter} onValueChange={setSportFilter}>
-          <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Sport" /></SelectTrigger>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-6">
+        <Select value={tab} onValueChange={setTab}>
+          <SelectTrigger className="w-[130px] rounded-xl"><SelectValue placeholder="All Types" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Sports</SelectItem>
-            {['cricket','football','basketball','tennis','badminton'].map(s => (
-              <SelectItem key={s} value={s} className="capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
-            ))}
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="buy">Buy</SelectItem>
+            <SelectItem value="rent">Rent</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[120px] rounded-xl"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="newest">Newest</SelectItem>
             <SelectItem value="price_low">Price: Low to High</SelectItem>
@@ -97,14 +128,6 @@ export default function Equipment() {
           </SelectContent>
         </Select>
       </div>
-
-      <Tabs value={tab} onValueChange={setTab} className="mb-6">
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="buy">Buy</TabsTrigger>
-          <TabsTrigger value="rent">Rent</TabsTrigger>
-        </TabsList>
-      </Tabs>
 
       {/* Price Comparison */}
       {comparisons.length > 0 && (
@@ -144,28 +167,38 @@ export default function Equipment() {
           <p>No equipment listed yet.</p>
         </CardContent></Card>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((item, i) => (
             <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-              <Card className="overflow-hidden hover:shadow-lg transition-all">
-                <div className="h-36 bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
-                  <ShoppingBag className="w-10 h-10 text-primary/30" />
+              <Card className="overflow-hidden rounded-xl shadow-sm hover:shadow-md transition-all border h-full flex flex-col">
+                <div className="h-36 relative bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <ShoppingBag className="w-10 h-10 text-primary/30" />
+                  )}
+                  <Badge className="absolute top-2 left-2 capitalize text-xs" variant="secondary">
+                    {item.sport_type || 'Other'}
+                  </Badge>
+                  <Badge className="absolute top-2 right-2 text-xs bg-primary text-primary-foreground border-0">
+                    {item.rent_price_per_day > 0 ? 'Rent' : 'Buy'}
+                  </Badge>
                 </div>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold">{item.name}</h3>
-                      {item.brand && <p className="text-xs text-muted-foreground">{item.brand}</p>}
-                    </div>
-                    <Badge className={conditionColors[item.condition] || 'bg-muted'}>{conditionLabels[item.condition] || item.condition}</Badge>
+                <CardContent className="p-3 flex flex-col flex-1">
+                  <h3 className="font-semibold text-sm line-clamp-2">{item.name}</h3>
+                  {item.brand && <p className="text-xs text-muted-foreground truncate">{item.brand}</p>}
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    {item.buy_price > 0 && <span className="text-sm font-semibold text-primary">₹{item.buy_price}</span>}
+                    {item.rent_price_per_day > 0 && (
+                      <span className="text-xs text-muted-foreground">₹{item.rent_price_per_day}/day</span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3 mt-3">
-                    {item.buy_price > 0 && <p className="text-sm font-semibold text-primary">₹{item.buy_price}</p>}
-                    {item.rent_price_per_day > 0 && <p className="text-xs text-muted-foreground">₹{item.rent_price_per_day}/day rent</p>}
-                  </div>
+                  <Badge className={`mt-2 w-fit ${conditionColors[item.condition] || 'bg-muted'}`}>
+                    {conditionLabels[item.condition] || (item.condition === 'like_new' ? 'Like New' : item.condition || 'Good')}
+                  </Badge>
                   {item.seller_location && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
-                      <MapPin className="w-3 h-3" /> {item.seller_location}
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2 truncate">
+                      <MapPin className="w-3 h-3 shrink-0" /> {item.seller_location}
                     </p>
                   )}
                 </CardContent>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { base44, isBase44Configured } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { 
@@ -22,6 +23,7 @@ export default function RoleSelect() {
   const [selected, setSelected] = useState(null);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     base44.auth.me().then(u => {
@@ -29,12 +31,19 @@ export default function RoleSelect() {
     }).catch(() => {});
   }, []);
 
-  const handleContinue = async () => {
+  const handleContinue = () => {
     if (!selected) return;
     setSaving(true);
-    await base44.auth.updateMe({ user_role: selected });
-    toast.success('Role saved!');
+    if (isBase44Configured && base44?.auth?.updateMe) {
+      try {
+        base44.auth.updateMe({ user_role: selected });
+      } catch (err) {
+        console.error('Failed to persist role (ignored in demo):', err);
+      }
+    }
+    toast.success('Role selected!');
     navigate('/Dashboard');
+    setSaving(false);
   };
 
   return (

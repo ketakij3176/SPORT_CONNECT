@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { base44, isBase44Configured } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 
@@ -12,12 +12,19 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(true);
   const [authError, setAuthError] = useState(null);
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
+  const [isDemoUser, setIsDemoUser] = useState(false);
 
   useEffect(() => {
     checkAppState();
   }, []);
 
   const checkAppState = async () => {
+    if (!isBase44Configured) {
+      setIsLoadingPublicSettings(false);
+      setIsLoadingAuth(false);
+      setAuthError(null);
+      return;
+    }
     try {
       setIsLoadingPublicSettings(true);
       setAuthError(null);
@@ -88,6 +95,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const checkUserAuth = async () => {
+    if (!isBase44Configured) {
+      setIsLoadingAuth(false);
+      setIsAuthenticated(false);
+      return;
+    }
     try {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
@@ -113,19 +125,36 @@ export const AuthProvider = ({ children }) => {
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
+    setIsDemoUser(false);
     
-    if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
-    } else {
-      // Just remove the token without redirect
-      base44.auth.logout();
+    if (isBase44Configured) {
+      if (shouldRedirect) {
+        base44.auth.logout(window.location.href);
+      } else {
+        base44.auth.logout();
+      }
+    } else if (shouldRedirect && typeof window !== 'undefined') {
+      window.location.href = '/Landing';
     }
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    if (isBase44Configured) {
+      base44.auth.redirectToLogin(window.location.href);
+    } else if (typeof window !== 'undefined') {
+      window.location.href = '/Login';
+    }
+  };
+
+  const loginDemo = ({ name, email, role = 'player' }) => {
+    const demoUser = {
+      full_name: name || 'Demo User',
+      email: email || 'demo@sportconnect.app',
+      user_role: role,
+    };
+    setUser(demoUser);
+    setIsAuthenticated(true);
+    setIsDemoUser(true);
   };
 
   return (
@@ -136,8 +165,10 @@ export const AuthProvider = ({ children }) => {
       isLoadingPublicSettings,
       authError,
       appPublicSettings,
+      isDemoUser,
       logout,
       navigateToLogin,
+      loginDemo,
       checkAppState
     }}>
       {children}

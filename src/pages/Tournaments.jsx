@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { supabase } from '@/lib/supabaseClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,15 +33,30 @@ export default function Tournaments() {
 
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ['tournaments'],
-    queryFn: () => base44.entities.Tournament.list('-date', 50),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select('*')
+        .order('start_date', { ascending: true })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   const regMutation = useMutation({
-    mutationFn: (data) => base44.entities.TournamentRegistration.create(data),
+    mutationFn: async (data) => {
+      const { error } = await supabase.from('tournament_registrations').insert(data);
+      if (error) throw error;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-tournament-regs'] });
       toast.success('Registration submitted!');
       setRegTournament(null);
+    },
+    onError: (err) => {
+      console.error('Registration failed:', err);
+      toast.error('Could not register. Check Supabase setup.');
     },
   });
 
@@ -97,9 +113,19 @@ export default function Tournaments() {
           {filtered.map((t, i) => (
             <motion.div key={t.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
               <Card className="overflow-hidden hover:shadow-lg transition-all">
-                <div className="h-36 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                  <Trophy className="w-12 h-12 text-primary/40" />
-                </div>
+                {t.image_url ? (
+                  <div className="h-36 overflow-hidden">
+                    <img
+                      src={t.image_url}
+                      alt={t.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-36 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                    <Trophy className="w-12 h-12 text-primary/40" />
+                  </div>
+                )}
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-semibold">{t.name}</h3>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { supabase } from '@/lib/supabaseClient';
+import { fetchNearbySportsGrounds, getEffectiveLocation } from '@/api/googlePlaces';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,22 +25,70 @@ export default function Grounds() {
   const [sportFilter, setSportFilter] = useState('all');
   const [bookingGround, setBookingGround] = useState(null);
   const [bookingData, setBookingData] = useState({ date: '', time_slot: '', num_players: 2, contact_number: '' });
+  const [locationInfo, setLocationInfo] = useState(null);
+  const [locationError, setLocationError] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    getEffectiveLocation()
+      .then((loc) => {
+        if (!cancelled) setLocationInfo(loc);
+      })
+      .catch((err) => {
+        if (!cancelled) setLocationError(err?.message || 'Unable to get location');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const { data: grounds = [], isLoading } = useQuery({
     queryKey: ['grounds'],
-    queryFn: () => base44.entities.Ground.list('-rating', 50),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('grounds')
+        .select('*')
+        .order('rating', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const {
+    data: googleGrounds = [],
+    isLoading: isLoadingGoogle,
+    isFetching: isFetchingGoogle,
+  } = useQuery({
+    queryKey: ['google-grounds', locationInfo?.lat, locationInfo?.lng, sportFilter],
+    enabled: !!locationInfo,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
+    queryFn: () =>
+      fetchNearbySportsGrounds({
+        lat: locationInfo.lat,
+        lng: locationInfo.lng,
+        sport: sportFilter,
+      }),
   });
 
   const bookMutation = useMutation({
-    mutationFn: (data) => base44.entities.Booking.create(data),
+    mutationFn: async (data) => {
+      const { error } = await supabase.from('bookings').insert(data);
+      if (error) throw error;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
       toast.success('Booking request submitted!');
       setBookingGround(null);
       setBookingData({ date: '', time_slot: '', num_players: 2, contact_number: '' });
+    },
+    onError: (err) => {
+      console.error('Booking failed:', err);
+      toast.error('Could not submit booking. Check Supabase setup.');
     },
   });
 
@@ -64,7 +114,9 @@ export default function Grounds() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold">Sports Grounds</h1>
-          <p className="text-muted-foreground text-sm">Find and book grounds near you</p>
+          <p className="text-muted-foreground text-sm">
+            Find and book grounds near you. Auto-discovered grounds use free OpenStreetMap data (defaulting to Mumbai if location is unavailable).
+          </p>
         </div>
       </div>
 
@@ -87,7 +139,7 @@ export default function Grounds() {
         </Select>
       </div>
 
-      {/* Grid */}
+      {/* Grid from app database (Base44) */}
       {isLoading ? (
         <div className="flex justify-center py-20">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -102,9 +154,19 @@ export default function Grounds() {
           {filtered.map((ground, i) => (
             <motion.div key={ground.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
               <Card className="overflow-hidden hover:shadow-lg transition-all group">
-                <div className="h-40 bg-gradient-to-br from-primary/10 to-secondary flex items-center justify-center text-5xl">
-                  {sportIcons[ground.sport_type] || '🎯'}
-                </div>
+                {ground.image_url ? (
+                  <div className="h-40 overflow-hidden">
+                    <img
+                      src={ground.image_url}
+                      alt={ground.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-40 bg-gradient-to-br from-primary/10 to-secondary flex items-center justify-center text-5xl">
+                    {sportIcons[ground.sport_type] || '🎯'}
+                  </div>
+                )}
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div>
@@ -135,6 +197,118 @@ export default function Grounds() {
           ))}
         </div>
       )}
+
+      {/* Auto-discovered grounds from open data */}
+      <div className="mt-10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">Auto-discovered grounds (OpenStreetMap)</h2>
+            <p className="text-xs text-muted-foreground">
+              Using free OpenStreetMap / Overpass data near your location{locationInfo?.isFallback ? ' (centered on Mumbai by default)' : ''}.
+            </p>
+            {locationError && (
+              <p className="text-xs text-red-500 mt-1">
+                {locationError}
+              </p>
+            )}
+          </div>
+          {(isLoadingGoogle || isFetchingGoogle) && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3 animate-spin" /> Loading nearby grounds...
+            </span>
+          )}
+        </div>
+
+        {!locationInfo && !locationError && (
+          <div className="flex justify-center py-10">
+            <div className="w-6 h-6 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          </div>
+        )}
+
+        {locationInfo && googleGrounds.length === 0 && !isLoadingGoogle && !isFetchingGoogle && (
+          <Card>
+            <CardContent className="p-8 text-center text-muted-foreground">
+              <Dumbbell className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p>No nearby grounds found for the selected filters.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {googleGrounds.length > 0 && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {googleGrounds
+              .filter((g) => {
+                const matchSearch =
+                  g.name?.toLowerCase().includes(search.toLowerCase()) ||
+                  g.address?.toLowerCase().includes(search.toLowerCase());
+                return matchSearch;
+              })
+              .map((ground, i) => (
+                <motion.div
+                  key={ground.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                >
+                  <Card className="overflow-hidden hover:shadow-lg transition-all group">
+                    <div className="h-40 bg-gradient-to-br from-primary/10 to-secondary flex items-center justify-center text-5xl">
+                      {sportIcons[ground.sport_type] || '🎯'}
+                    </div>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="font-semibold">{ground.name}</h3>
+                          <Badge variant="outline" className="text-xs capitalize mt-1">
+                            Open data · {ground.sport_type}
+                          </Badge>
+                        </div>
+                        {ground.rating > 0 && (
+                          <div className="flex flex-col items-end gap-0.5">
+                            <div className="flex items-center gap-1">
+                              <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                              <span className="text-sm font-medium">{ground.rating}</span>
+                            </div>
+                            {ground.user_ratings_total > 0 && (
+                              <span className="text-[10px] text-muted-foreground">
+                                {ground.user_ratings_total} reviews
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {ground.address && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+                          <MapPin className="w-3 h-3" /> {ground.address}
+                        </p>
+                      )}
+                      {typeof ground.distance_km === 'number' && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <Clock className="w-3 h-3" />
+                          Approx. {ground.distance_km.toFixed(1)} km from you
+                        </p>
+                      )}
+                      <Button
+                        className="w-full mt-3 rounded-lg"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const loc = ground.location;
+                          if (!loc) return;
+                          const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            `${ground.name} ${loc.lat},${loc.lng}`,
+                          )}`;
+                          window.open(url, '_blank', 'noopener,noreferrer');
+                        }}
+                      >
+                        <MapPin className="w-4 h-4 mr-2" /> View in Google Maps
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+          </div>
+        )}
+      </div>
 
       {/* Booking Dialog */}
       <Dialog open={!!bookingGround} onOpenChange={() => setBookingGround(null)}>
