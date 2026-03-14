@@ -21,7 +21,7 @@ alert("Invalid username or password")
 return
 }
 
-navigate("/Landing")
+navigate("/main")
 
 }
 
