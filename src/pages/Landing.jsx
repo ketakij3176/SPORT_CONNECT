@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { 
   MapPin, Trophy, Users, ShoppingBag, Dumbbell, MessageCircle,
-  ArrowRight, Zap, ChevronRight
+  ArrowRight, Zap
 } from 'lucide-react';
 
 const features = [
@@ -88,7 +88,8 @@ export default function Landing() {
                 </Button>
               </Link>
 
-              <Link to="/discover-map">
+              {/* FIXED BUTTON */}
+              <Link to="/discover">
                 <Button size="lg" variant="outline" className="rounded-full text-base px-8 h-12">
                   Explore Map
                 </Button>
@@ -115,54 +116,6 @@ export default function Landing() {
 
           </motion.div>
 
-        </div>
-      </section>
-
-      {/* FEATURES */}
-      <section className="py-24 bg-muted/30">
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-              Everything You Need to Play
-            </h2>
-
-            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">
-              From discovering grounds to finding teammates, SportConnect brings the entire sports ecosystem to your fingertips.
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-            {features.map((f, i) => {
-              const Icon = f.icon;
-
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-card rounded-2xl p-6 border hover:shadow-lg transition-all duration-300 group"
-                >
-
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                    <Icon className="w-6 h-6 text-primary" />
-                  </div>
-
-                  <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
-
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {f.desc}
-                  </p>
-
-                </motion.div>
-              );
-            })}
-
-          </div>
         </div>
       </section>
 

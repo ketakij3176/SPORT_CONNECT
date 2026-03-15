@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { supabase } from '@/lib/supabaseClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,9 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trophy, MapPin, Calendar, Users, Search, DollarSign } from 'lucide-react';
+import { Trophy, MapPin, Calendar, Search, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -22,23 +22,38 @@ const statusBadge = {
 };
 
 export default function Tournaments() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [search, setSearch] = useState('');
   const [sportFilter, setSportFilter] = useState('all');
-  const [regTournament, setRegTournament] = useState(null);
-  const [regData, setRegData] = useState({ phone: '', team_name: '', num_players: 5 });
   const queryClient = useQueryClient();
 
-  useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
 
+  // Fetch tournaments
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ['tournaments'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tournaments')
         .select('*')
-        .order('start_date', { ascending: true })
-        .limit(50);
+        .order('date', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch user registrations
+  const { data: myRegistrations = [] } = useQuery({
+    queryKey: ['my-tournament-regs'],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('tournament_registrations')
+        .select('*')
+        .eq('user_id', user.id);
       if (error) throw error;
       return data || [];
     },
@@ -49,10 +64,18 @@ export default function Tournaments() {
       const { error } = await supabase.from('tournament_registrations').insert(data);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['my-tournament-regs'] });
-      toast.success('Registration submitted!');
-      setRegTournament(null);
+
+      await supabase.from('notifications').insert([
+        {
+          user_id: variables.user_id,
+          message: `You have successfully registered for ${variables.tournament_name}.`,
+        },
+      ]);
+
+      toast.success('Registration successful!');
+      navigate('/tournaments');
     },
     onError: (err) => {
       console.error('Registration failed:', err);
@@ -65,16 +88,6 @@ export default function Tournaments() {
     const matchSport = sportFilter === 'all' || t.sport_type === sportFilter;
     return matchSearch && matchSport;
   });
-
-  const handleRegister = () => {
-    regMutation.mutate({
-      tournament_id: regTournament.id,
-      tournament_name: regTournament.name,
-      user_email: user?.email,
-      user_name: user?.full_name,
-      ...regData,
-    });
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
@@ -92,7 +105,7 @@ export default function Tournaments() {
           <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Sport" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Sports</SelectItem>
-            {['cricket','football','basketball','tennis','badminton','volleyball','hockey'].map(s => (
+            {['cricket', 'football', 'basketball', 'tennis', 'badminton', 'volleyball', 'hockey'].map(s => (
               <SelectItem key={s} value={s} className="capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
             ))}
           </SelectContent>
@@ -138,7 +151,12 @@ export default function Tournaments() {
                     {t.entry_fee > 0 && <p className="flex items-center gap-1.5"><DollarSign className="w-3 h-3" /> Entry: ₹{t.entry_fee}</p>}
                   </div>
                   {t.prize_pool && <p className="text-sm font-semibold text-primary mt-2">Prize: {t.prize_pool}</p>}
-                  <Button className="w-full mt-3 rounded-lg" size="sm" onClick={() => setRegTournament(t)} disabled={t.status === 'completed' || t.status === 'cancelled'}>
+                  <Button
+                    className="w-full mt-3 rounded-lg"
+                    size="sm"
+                    onClick={() => navigate(`/tournament-registration/${t.id}`)}
+                    disabled={t.status === 'completed' || t.status === 'cancelled'}
+                  >
                     Register Now
                   </Button>
                 </CardContent>
@@ -147,21 +165,6 @@ export default function Tournaments() {
           ))}
         </div>
       )}
-
-      <Dialog open={!!regTournament} onOpenChange={() => setRegTournament(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Register for {regTournament?.name}</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4">
-            <div><Label>Phone</Label><Input value={regData.phone} onChange={e => setRegData({...regData, phone: e.target.value})} placeholder="Your phone" /></div>
-            <div><Label>Team Name</Label><Input value={regData.team_name} onChange={e => setRegData({...regData, team_name: e.target.value})} placeholder="Your team name" /></div>
-            <div><Label>Number of Players</Label><Input type="number" min={1} value={regData.num_players} onChange={e => setRegData({...regData, num_players: parseInt(e.target.value)})} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRegTournament(null)}>Cancel</Button>
-            <Button onClick={handleRegister} disabled={regMutation.isPending}>{regMutation.isPending ? 'Submitting...' : 'Register'}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

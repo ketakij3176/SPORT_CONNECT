@@ -348,18 +348,29 @@ export default function Discover() {
                 )}
                 <div className="flex gap-2 mt-3">
                   {item.markerType === 'ground' && (
-                    <Button size="sm" className="flex-1 rounded-lg">
-                      Book this ground
+                    <Button asChild size="sm" className="flex-1 rounded-lg">
+                      <Link to={`/ground-booking/${item.id}`}>
+                        Book this ground
+                      </Link>
                     </Button>
                   )}
                   {item.markerType === 'tournament' && (
-                    <Button size="sm" className="flex-1 rounded-lg">
-                      Register now
+                    <Button asChild size="sm" className="flex-1 rounded-lg">
+                      <Link to={`/tournament-registration/${item.id}`}>
+                        Register now
+                      </Link>
                     </Button>
                   )}
                   {item.markerType === 'player' && (
-                    <Button size="sm" variant="outline" className="flex-1 rounded-lg">
-                      Connect with player
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 rounded-lg"
+                    >
+                      <Link to={`/player-connection/${item.id}`}>
+                        Connect with player
+                      </Link>
                     </Button>
                   )}
                   {item.markerType === 'store' && (

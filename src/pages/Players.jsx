@@ -146,17 +146,14 @@ export default function Players() {
               <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
                 <Card className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <User className="w-6 h-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{p.full_name}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{p.user_role?.replace('_', ' ') || 'Player'}</p>
-                    </div>
-                    <Link to={`/Messages?to=${p.email}&name=${p.full_name}`}>
-                      <Button size="icon" variant="outline" className="shrink-0 rounded-full">
-                        <MessageCircle className="w-4 h-4" />
-                      </Button>
+                    <Link to={`/player-connection/${p.id}`} className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <User className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">{p.full_name}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{p.user_role?.replace('_', ' ') || 'Player'}</p>
+                      </div>
                     </Link>
                   </CardContent>
                 </Card>

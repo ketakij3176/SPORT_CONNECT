@@ -1,19 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const isConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+const supabaseUrl = "https://naxrplktughcemjjbhft.supabase.co"
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5heHJwbGt0dWdoY2VtampiaGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNDkyMDYsImV4cCI6MjA4ODgyNTIwNn0.8gzamBvq8CGVZa4gPDruzJdZsNEHbCH2CyUsuWdzDqE"
 
-const emptyPromise = Promise.resolve({ data: [], error: null });
-const emptyInsert = Promise.resolve({ error: null });
-
-const noopSupabase = {
-  from: () => ({
-    select: () => ({ order: () => ({ limit: () => emptyPromise }), then: (fn) => emptyPromise.then(fn) }),
-    insert: () => ({ then: (fn) => emptyInsert.then(fn) }),
-  }),
-};
-
-export const isSupabaseConfigured = isConfigured;
-export const supabase = isConfigured ? createClient(supabaseUrl, supabaseAnonKey) : noopSupabase;
-
+export const supabase = createClient(supabaseUrl, supabaseKey)
